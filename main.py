@@ -1,25 +1,20 @@
 from src.strategy import StrategyOptimizer
 
-# Initialize the optimizer
-# We are simulating a 57-lap race (like Bahrain)
-optimizer = StrategyOptimizer(total_laps=57)
+# We test with FERRARI because they have average tire wear (good benchmark)
+optimizer = StrategyOptimizer(team="Ferrari", track="Bahrain", total_laps=57)
 
-print("--- STARTING OPTIMIZATION ---")
-print("Simulating thousands of race strategies...")
+print("--- STARTING STRATEGY OPTIMIZATION (WITH TIRE CLIFF) ---")
 
-# 1. Run the 1-Stop Solver
+# 1. Run Solvers
 time_1, strat_1 = optimizer.find_optimal_1_stop()
+print(f"Best 1-Stop: {time_1:.2f} min | Box: {strat_1[0]} | Tires: {strat_1[1]}")
 
-# 2. Run the 2-Stop Solver
 time_2, strat_2 = optimizer.find_optimal_2_stop()
+print(f"Best 2-Stop: {time_2:.2f} min | Box: {strat_2[0]} | Tires: {strat_2[1]}")
 
-# 3. Compare and Declare a Winner
+# 2. Verdict
 print("\n--- FINAL VERDICT ---")
 if time_1 < time_2:
-    diff = (time_2 - time_1) * 60
-    print(f"WINNER: 1-Stop Strategy is faster by {diff:.1f} seconds.")
-    print(f"Strategy: {strat_1[1]} (Box Lap {strat_1[0]})")
+    print(f"WINNER: 1-Stop is faster by {(time_2 - time_1)*60:.2f} sec.")
 else:
-    diff = (time_1 - time_2) * 60
-    print(f"WINNER: 2-Stop Strategy is faster by {diff:.1f} seconds.")
-    print(f"Strategy: {strat_2[1]} (Box Laps {strat_2[0]})")
+    print(f"WINNER: 2-Stop is faster by {(time_1 - time_2)*60:.2f} sec.")

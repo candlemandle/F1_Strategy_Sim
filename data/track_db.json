@@ -1,0 +1,90 @@
+{
+    "Japan": {
+        "avg_deg": 0.10396048563446413,
+        "laps": 53
+    },
+    "Abu Dhabi": {
+        "avg_deg": 0.05906818064556659,
+        "laps": 58
+    },
+    "Austria": {
+        "avg_deg": 0.08626725249567684,
+        "laps": 71
+    },
+    "Great Britain": {
+        "avg_deg": 0.01,
+        "laps": 52
+    },
+    "Italy": {
+        "avg_deg": 0.07668378244663208,
+        "laps": 51
+    },
+    "Las Vegas": {
+        "avg_deg": 0.01,
+        "laps": 50
+    },
+    "Singapore": {
+        "avg_deg": 0.01524937419718328,
+        "laps": 62
+    },
+    "Canada": {
+        "avg_deg": 0.01315873343295854,
+        "laps": 70
+    },
+    "Qatar": {
+        "avg_deg": 0.07794427716326413,
+        "laps": 57
+    },
+    "Australia": {
+        "avg_deg": 0.01,
+        "laps": 53
+    },
+    "Azerbaijan": {
+        "avg_deg": 0.01,
+        "laps": 51
+    },
+    "Saudi Arabia": {
+        "avg_deg": 0.01,
+        "laps": 50
+    },
+    "Miami": {
+        "avg_deg": 0.022364484039543768,
+        "laps": 57
+    },
+    "Netherlands": {
+        "avg_deg": 0.01,
+        "laps": 72
+    },
+    "Bahrain": {
+        "avg_deg": 0.07469439866494311,
+        "laps": 57
+    },
+    "Hungary": {
+        "avg_deg": 0.06669209361112924,
+        "laps": 70
+    },
+    "Belgium": {
+        "avg_deg": 0.10069714751170591,
+        "laps": 44
+    },
+    "Brazil": {
+        "avg_deg": 0.07896398229459034,
+        "laps": 71
+    },
+    "United States": {
+        "avg_deg": 0.04687879630088515,
+        "laps": 56
+    },
+    "Monaco": {
+        "avg_deg": 0.031966810146618674,
+        "laps": 78
+    },
+    "Spain": {
+        "avg_deg": 0.06309333005221551,
+        "laps": 66
+    },
+    "Mexico": {
+        "avg_deg": 0.06054074116164111,
+        "laps": 71
+    }
+}

@@ -1,0 +1,42 @@
+{
+    "Red Bull Racing": {
+        "pace_index": 1.0008,
+        "deg_index": 0.9
+    },
+    "McLaren": {
+        "pace_index": 1.0097,
+        "deg_index": 1.029
+    },
+    "Ferrari": {
+        "pace_index": 1.0071,
+        "deg_index": 1.001
+    },
+    "Mercedes": {
+        "pace_index": 1.0069,
+        "deg_index": 0.935
+    },
+    "Aston Martin": {
+        "pace_index": 1.0097,
+        "deg_index": 0.901
+    },
+    "Alpine": {
+        "pace_index": 1.0115,
+        "deg_index": 0.964
+    },
+    "AlphaTauri": {
+        "pace_index": 1.0168,
+        "deg_index": 1.054
+    },
+    "Alfa Romeo": {
+        "pace_index": 1.0177,
+        "deg_index": 1.069
+    },
+    "Haas F1 Team": {
+        "pace_index": 1.0171,
+        "deg_index": 1.275
+    },
+    "Williams": {
+        "pace_index": 1.0174,
+        "deg_index": 1.193
+    }
+}
