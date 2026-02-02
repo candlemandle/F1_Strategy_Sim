@@ -1,16 +1,25 @@
-# This is a sample Python script.
+from src.strategy import StrategyOptimizer
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+# Initialize the optimizer
+# We are simulating a 57-lap race (like Bahrain)
+optimizer = StrategyOptimizer(total_laps=57)
 
+print("--- STARTING OPTIMIZATION ---")
+print("Simulating thousands of race strategies...")
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+# 1. Run the 1-Stop Solver
+time_1, strat_1 = optimizer.find_optimal_1_stop()
 
+# 2. Run the 2-Stop Solver
+time_2, strat_2 = optimizer.find_optimal_2_stop()
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# 3. Compare and Declare a Winner
+print("\n--- FINAL VERDICT ---")
+if time_1 < time_2:
+    diff = (time_2 - time_1) * 60
+    print(f"WINNER: 1-Stop Strategy is faster by {diff:.1f} seconds.")
+    print(f"Strategy: {strat_1[1]} (Box Lap {strat_1[0]})")
+else:
+    diff = (time_1 - time_2) * 60
+    print(f"WINNER: 2-Stop Strategy is faster by {diff:.1f} seconds.")
+    print(f"Strategy: {strat_2[1]} (Box Laps {strat_2[0]})")
