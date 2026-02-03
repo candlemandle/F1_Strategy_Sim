@@ -86,37 +86,57 @@ class RaceCar:
                 self.is_raining = True
 
     def simulate_lap(self):
+        # 0. Weather & Safety Car Check
         self.check_weather()
 
+        # Safety Car Probability (Higher on street tracks like Monaco/Baku)
+        sc_chance = 2.0 if self.track_name in ["Monaco", "Azerbaijan", "Singapore"] else 0.5
+        is_safety_car = random.uniform(0, 100) < sc_chance
+
+        # 1. Base Pace
         lap_time = self.base_lap_time
         lap_time += self.current_fuel * self.fuel_penalty
         lap_time += self.tire_pace_offsets.get(self.current_tire, 0.0)
 
-        # Weather Physics
+        # 2. Weather Physics
         if self.is_raining:
             if self.current_tire == 'INTER':
                 lap_time += 10.0
             else:
-                lap_time += 30.0  # Slicks in rain = slow
+                lap_time += 30.0
         else:
             if self.current_tire == 'INTER':
                 lap_time += 5.0
 
-        deg_per_lap = self.tire_deg_coeffs.get(self.current_tire, 0.05)
-        lap_time += self.tire_age * deg_per_lap
+                # 3. Safety Car Physics (The Chaos)
+        if is_safety_car:
+            lap_time += 40.0  # Everyone drives slow (Delta Time)
+            # If we pitted THIS lap, we got lucky!
+            # We assume the pit stop logic happened *before* this function or we handle it in main
+            # For this simulation, we just record the status
 
-        # Cliff
+        # 4. Degradation
+        # Tires cool down behind Safety Car -> LESS degradation
+        deg_factor = 0.2 if is_safety_car else 1.0
+
+        deg_per_lap = self.tire_deg_coeffs.get(self.current_tire, 0.05)
+        lap_time += (self.tire_age * deg_per_lap) * deg_factor
+
+        # 5. Cliff (Exponential)
         cliff_alert = 0.0
-        if self.current_tire == 'SOFT' and self.tire_age > 18:
-            cliff_alert = 0.1 * math.exp(0.3 * (self.tire_age - 18))
-        elif self.current_tire == 'MEDIUM' and self.tire_age > 28:
-            cliff_alert = 0.1 * math.exp(0.3 * (self.tire_age - 28))
+        if not is_safety_car:  # No thermal deg behind SC
+            if self.current_tire == 'SOFT' and self.tire_age > 18:
+                cliff_alert = 0.1 * math.exp(0.3 * (self.tire_age - 18))
+            elif self.current_tire == 'MEDIUM' and self.tire_age > 28:
+                cliff_alert = 0.1 * math.exp(0.3 * (self.tire_age - 28))
 
         lap_time += cliff_alert
 
+        # 6. Randomness
         variance = 0.1 * self.team_stats['pace_index']
         lap_time += random.uniform(-variance, variance)
 
+        # Update State
         self.current_fuel -= self.fuel_burn
         self.tire_age += 1
         self.laps_completed += 1
@@ -127,7 +147,8 @@ class RaceCar:
             'Time': lap_time,
             'Compound': self.current_tire,
             'TyreAge': self.tire_age,
-            'Rain': self.is_raining
+            'Rain': self.is_raining,
+            'SC': is_safety_car
         })
 
         return lap_time
