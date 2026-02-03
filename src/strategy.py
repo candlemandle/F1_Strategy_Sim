@@ -2,17 +2,18 @@ from src.simulation import RaceCar
 
 
 class StrategyOptimizer:
-    def __init__(self, team="Red Bull Racing", track="Bahrain", total_laps=57):
+    def __init__(self, team, track, rain_prob=0, total_laps=57):
         self.team = team
         self.track = track
+        self.rain_prob = rain_prob
         self.total_laps = total_laps
 
     def evaluate_strategy(self, stop_laps, compounds):
-        # Create the car with REAL data
-        car = RaceCar(team_name=self.team, track_name=self.track)
+        # --- PASS THE WEATHER DATA HERE ---
+        car = RaceCar(team_name=self.team, track_name=self.track, rain_prob=self.rain_prob)
 
         current_compound_idx = 0
-        car.current_tire = compounds[0]  # Start tire
+        car.current_tire = compounds[0]
 
         stops_set = set(stop_laps)
 
@@ -28,14 +29,14 @@ class StrategyOptimizer:
         return car.total_race_time / 60.0  # Return in minutes
 
     def find_optimal_1_stop(self):
-        print(f"--- Optimizing 1-Stop ({self.team} @ {self.track}) ---")
+        # We search a bit less aggressively to keep the GUI responsive (fast)
         best_time = float('inf')
         best_strategy = None
 
         tire_combos = [['SOFT', 'HARD'], ['SOFT', 'MEDIUM'], ['MEDIUM', 'HARD']]
 
         # Search pit window: Lap 15 to 45
-        for lap in range(15, 45):
+        for lap in range(15, 45, 2):  # Step 2 to speed it up
             for combo in tire_combos:
                 time = self.evaluate_strategy([lap], combo)
                 if time < best_time:
@@ -45,7 +46,6 @@ class StrategyOptimizer:
         return best_time, best_strategy
 
     def find_optimal_2_stop(self):
-        print(f"--- Optimizing 2-Stop ({self.team} @ {self.track}) ---")
         best_time = float('inf')
         best_strategy = None
 
@@ -55,9 +55,9 @@ class StrategyOptimizer:
             ['SOFT', 'HARD', 'MEDIUM']
         ]
 
-        # Search pit windows
-        for stop1 in range(12, 30):
-            for stop2 in range(stop1 + 15, 50):
+        # Search pit windows (Step 2 to keep GUI fast)
+        for stop1 in range(12, 30, 2):
+            for stop2 in range(stop1 + 15, 52, 2):
                 for combo in tire_combos:
                     time = self.evaluate_strategy([stop1, stop2], combo)
                     if time < best_time:
