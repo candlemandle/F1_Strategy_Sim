@@ -28,7 +28,7 @@ class RaceCar:
 
         # Stats Loading
         if team_name not in team_db:
-            print(f"[WARNING] Using Red Bull default for {team_name}")
+            # Fallback
             self.team_stats = team_db.get('Red Bull Racing', {'pace_index': 1.0, 'deg_index': 1.0})
         else:
             self.team_stats = team_db[team_name]
@@ -65,13 +65,26 @@ class RaceCar:
         self.total_race_time = 0.0
         self.history = []
 
-    def pit_stop(self, new_compound):
-        pit_loss = 22.0
+        # --- THIS WAS MISSING OR BROKEN ---
+
+    def pit_stop(self, new_compound, reason="Scheduled"):
+        # Reduced cost under Safety Car
+        # Check previous lap history for SC status
+        is_sc = False
+        if self.history:
+            is_sc = self.history[-1].get('SC', False)
+
+        pit_loss = 12.0 if is_sc else 22.0
+
         self.current_tire = new_compound
         self.tire_age = 0
         self.total_race_time += pit_loss
+
+        # Record the reasoning for the GUI
         if self.history:
             self.history[-1]['Time'] += pit_loss
+            self.history[-1]['PitStop'] = True
+            self.history[-1]['PitReason'] = reason
 
     def check_weather(self):
         if self.rain_prob == 0: return
@@ -86,10 +99,10 @@ class RaceCar:
                 self.is_raining = True
 
     def simulate_lap(self):
-        # 0. Weather & Safety Car Check
+        # 0. Weather & SC Checks
         self.check_weather()
 
-        # Safety Car Probability (Higher on street tracks like Monaco/Baku)
+        # Safety Car Probability (Higher on street tracks)
         sc_chance = 2.0 if self.track_name in ["Monaco", "Azerbaijan", "Singapore"] else 0.5
         is_safety_car = random.uniform(0, 100) < sc_chance
 
@@ -108,23 +121,18 @@ class RaceCar:
             if self.current_tire == 'INTER':
                 lap_time += 5.0
 
-                # 3. Safety Car Physics (The Chaos)
+                # 3. Safety Car Physics
         if is_safety_car:
-            lap_time += 40.0  # Everyone drives slow (Delta Time)
-            # If we pitted THIS lap, we got lucky!
-            # We assume the pit stop logic happened *before* this function or we handle it in main
-            # For this simulation, we just record the status
+            lap_time += 40.0  # Slow delta
 
         # 4. Degradation
-        # Tires cool down behind Safety Car -> LESS degradation
         deg_factor = 0.2 if is_safety_car else 1.0
-
         deg_per_lap = self.tire_deg_coeffs.get(self.current_tire, 0.05)
         lap_time += (self.tire_age * deg_per_lap) * deg_factor
 
-        # 5. Cliff (Exponential)
+        # 5. Cliff
         cliff_alert = 0.0
-        if not is_safety_car:  # No thermal deg behind SC
+        if not is_safety_car:
             if self.current_tire == 'SOFT' and self.tire_age > 18:
                 cliff_alert = 0.1 * math.exp(0.3 * (self.tire_age - 18))
             elif self.current_tire == 'MEDIUM' and self.tire_age > 28:
