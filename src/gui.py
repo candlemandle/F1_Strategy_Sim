@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.patches import Patch
 from PIL import Image
 import os
 import json
@@ -16,9 +17,9 @@ COLOR_BG = "#1e1e1e"
 COLOR_ACCENT = "#E10600"  # F1 Red
 COLOR_TEXT_DIM = "#aaaaaa"
 
-# Graph Colors (High Contrast)
+# Graph Colors
 COLOR_1_STOP = "#00FFFF"  # Cyan
-COLOR_2_STOP = "#FF3399"  # Neon Pink/Red
+COLOR_2_STOP = "#FF3399"  # Neon Pink
 COLOR_SC = "#FFFF00"  # Yellow
 
 
@@ -30,25 +31,23 @@ class F1SimApp(ctk.CTk):
         self.geometry("1400x900")
         self.configure(fg_color=COLOR_BG)
 
-        # Load Data Sorted
         self.teams_list = sorted(self.load_json_keys('team_db.json', ["Red Bull Racing", "Ferrari"]))
         self.tracks_list = sorted(self.load_json_keys('track_db.json', ["Bahrain", "Monza"]))
 
         self.setup_ui()
 
     def setup_ui(self):
-        # --- LAYOUT ---
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=0)
         self.grid_rowconfigure(0, weight=1)
 
-        # ================= LEFT SIDEBAR =================
+        # LEFT SIDEBAR
         self.sidebar = ctk.CTkFrame(self, width=280, corner_radius=0, fg_color="#151515")
         self.sidebar.grid(row=0, column=0, sticky="nsew")
 
         ctk.CTkLabel(self.sidebar, text="RACE CONTROL", font=("DIN Alternate", 24, "bold"), text_color="white").pack(
             pady=(30, 10))
-        ctk.CTkLabel(self.sidebar, text="v2.5.0 | DATA-DRIVEN", font=("Arial", 10), text_color=COLOR_TEXT_DIM).pack(
+        ctk.CTkLabel(self.sidebar, text="v2.6.0 | DATA-DRIVEN", font=("Arial", 10), text_color=COLOR_TEXT_DIM).pack(
             pady=(0, 30))
 
         self.create_label("CONSTRUCTOR")
@@ -81,7 +80,7 @@ class F1SimApp(ctk.CTk):
                                      command=self.start_simulation_thread)
         self.run_btn.pack(side="bottom", fill="x", padx=20, pady=40)
 
-        # ================= CENTER PANEL =================
+        # CENTER PANEL
         self.center_panel = ctk.CTkFrame(self, fg_color="transparent")
         self.center_panel.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
 
@@ -94,7 +93,7 @@ class F1SimApp(ctk.CTk):
         self.verdict_label = ctk.CTkLabel(self.verdict_frame, text="AWAITING DATA...", font=("Arial", 20, "bold"))
         self.verdict_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        # ================= RIGHT PANEL =================
+        # RIGHT PANEL
         self.right_panel = ctk.CTkFrame(self, width=300, corner_radius=0, fg_color="#1a1a1a")
         self.right_panel.grid(row=0, column=2, sticky="nsew")
 
@@ -108,6 +107,11 @@ class F1SimApp(ctk.CTk):
         self.log_box = ctk.CTkTextbox(self.right_panel, height=400, fg_color="#111", text_color="#00ff00",
                                       font=("Consolas", 12))
         self.log_box.pack(fill="x", padx=15, pady=5)
+
+        self.log_box.tag_config("white", foreground="white")
+        self.log_box.tag_config("yellow", foreground="#FFD700")
+        self.log_box.tag_config("red", foreground="#FF4444")
+        self.log_box.tag_config("blue", foreground="#44DDFF")
 
         self.load_track_map(self.track_menu.get())
 
@@ -144,13 +148,8 @@ class F1SimApp(ctk.CTk):
                     pass
         if not found: self.map_label.configure(image=None, text=f"NO MAP FOR\n{track_name.upper()}")
 
-    def log_msg(self, msg, color=None):
-        tag = "white"
-        if "BOX" in msg: tag = "yellow"
-        if "SAFETY" in msg: tag = "red"
-        if "RAIN" in msg: tag = "blue"
-
-        self.log_box.insert("end", f">> {msg}\n", tag)
+    def log_msg(self, msg, color="white"):
+        self.log_box.insert("end", f">> {msg}\n", color)
         self.log_box.see("end")
 
     # --- SIMULATION ---
@@ -189,11 +188,44 @@ class F1SimApp(ctk.CTk):
             self.animate_race(team, track, rain, s1, s2)
 
         except Exception as e:
-            self.log_msg(f"CRITICAL ERROR: {e}")
+            self.log_msg(f"CRITICAL ERROR: {e}", "red")
             import traceback
             traceback.print_exc()
 
         self.run_btn.configure(state="normal", text="INITIATE STRATEGY", fg_color=COLOR_ACCENT)
+
+    def paint_tire_zones(self, ax, history):
+        """Draws colored bands for tire compounds"""
+        compound_colors = {
+            'SOFT': ('#ff3333', 0.15),
+            'MEDIUM': ('#ffff33', 0.15),
+            'HARD': ('#ffffff', 0.10),
+            'INTER': ('#33ccff', 0.20)
+        }
+
+        # Legend Patches
+        legend_elements = [
+            Patch(facecolor='#ff3333', alpha=0.3, label='Soft'),
+            Patch(facecolor='#ffff33', alpha=0.3, label='Medium'),
+            Patch(facecolor='#ffffff', alpha=0.3, label='Hard'),
+            Patch(facecolor='#33ccff', alpha=0.3, label='Inter')
+        ]
+
+        tire_legend = ax.legend(handles=legend_elements, loc='upper center',
+                                ncol=4, frameon=False, labelcolor='white', fontsize=8)
+        ax.add_artist(tire_legend)
+
+        start_lap = 0
+        if not history: return
+        current_comp = history[0]['Compound']
+
+        for i, lap_data in enumerate(history):
+            comp = lap_data['Compound']
+            if comp != current_comp or i == len(history) - 1:
+                color, alpha = compound_colors.get(current_comp, ('#333', 0.1))
+                ax.axvspan(start_lap, i, facecolor=color, alpha=alpha)
+                current_comp = comp
+                start_lap = i
 
     def animate_race(self, team, track, rain, strat1, strat2):
         car1 = self.run_single_race(team, track, rain, strat1)
@@ -208,9 +240,10 @@ class F1SimApp(ctk.CTk):
         fig.patch.set_facecolor('#2b2b2b')
         ax.set_facecolor('#2b2b2b')
 
-        # --- IMPROVED VISUALS ---
-        line1, = ax.plot([], [], color=COLOR_1_STOP, label='1-Stop (Hard/Med)', linewidth=2.5)
-        line2, = ax.plot([], [], color=COLOR_2_STOP, label='2-Stop (Aggressive)', linewidth=2.5)
+        self.paint_tire_zones(ax, car2.history)
+
+        line1, = ax.plot([], [], color=COLOR_1_STOP, label='1-Stop', linewidth=2.5)
+        line2, = ax.plot([], [], color=COLOR_2_STOP, label='2-Stop', linewidth=2.5)
 
         ax.set_xlim(0, 58)
         min_y = min(min(times1), min(times2)) - 5
@@ -223,7 +256,6 @@ class F1SimApp(ctk.CTk):
         ax.tick_params(colors='white', which='both')
         ax.grid(True, color='#444444', linestyle='--', alpha=0.5)
 
-        # Better Legend
         legend = ax.legend(frameon=True, facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
 
         canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
@@ -238,26 +270,30 @@ class F1SimApp(ctk.CTk):
             line2.set_data(range(1, frame_idx + 2), times2[:frame_idx + 1])
 
             # --- EVENTS LOGGING ---
-            # Use car2 (the 2-stopper) to detect general race events
             lap_data = car2.history[frame_idx]
+            lap_data_1 = car1.history[frame_idx]
 
             if lap_data.get('Rain', False):
-                self.log_msg(f"L{frame_idx + 1}: RAIN CONDITION ACTIVE")
+                self.log_msg(f"L{frame_idx + 1}: RAIN CONDITION ACTIVE", "blue")
 
             if lap_data.get('SC', False):
-                self.log_msg(f"L{frame_idx + 1}: SAFETY CAR DEPLOYED")
-                ax.axvline(x=frame_idx + 1, color=COLOR_SC, alpha=0.6, linestyle='--')
+                self.log_msg(f"L{frame_idx + 1}: SAFETY CAR DEPLOYED", "red")
+                ax.axvline(x=frame_idx + 1, color=COLOR_SC, alpha=0.8, linestyle='--', linewidth=1.5)
 
-            # Check 2-Stop Pits
+            # --- NEW: PLOT PIT STOP DOTS ---
             if lap_data.get('PitStop', False):
                 reason = lap_data.get('PitReason', 'Scheduled')
-                self.log_msg(f"L{frame_idx + 1} [2-STOP]: BOX! ({reason})")
+                self.log_msg(f"L{frame_idx + 1} [2-STOP]: BOX! ({reason})", "yellow")
+                # Plot Dot for 2-Stop line
+                ax.plot(frame_idx, times2[frame_idx], 'o', color='white', markeredgecolor=COLOR_2_STOP,
+                        markeredgewidth=2, markersize=8, zorder=5)
 
-            # Check 1-Stop Pits
-            lap_data_1 = car1.history[frame_idx]
             if lap_data_1.get('PitStop', False):
                 reason = lap_data_1.get('PitReason', 'Scheduled')
-                self.log_msg(f"L{frame_idx + 1} [1-STOP]: BOX! ({reason})")
+                self.log_msg(f"L{frame_idx + 1} [1-STOP]: BOX! ({reason})", "yellow")
+                # Plot Dot for 1-Stop line
+                ax.plot(frame_idx, times1[frame_idx], 'o', color='white', markeredgecolor=COLOR_1_STOP,
+                        markeredgewidth=2, markersize=8, zorder=5)
 
             canvas.draw()
             self.after(100, update_frame, frame_idx + 1)
@@ -274,8 +310,6 @@ class F1SimApp(ctk.CTk):
         for lap in range(1, 58):
             reason = "Scheduled"
 
-            # --- SMART PIT REASONING ---
-            # Check if previous lap had Safety Car (History has -1, so we check that)
             if car.history and car.history[-1].get('SC', False):
                 reason = "SC ADVANTAGE"
             elif car.tire_age > 25 and car.current_tire == 'SOFT':
